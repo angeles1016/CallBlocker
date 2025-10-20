@@ -1,0 +1,7 @@
+# Create the file (use your text editor or command)
+# The content should be similar to the standard Visual Studio/MAUI .gitignore template
+# Example content:
+bin/
+obj/
+*.user
+.vs/
