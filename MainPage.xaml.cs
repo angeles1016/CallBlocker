@@ -43,6 +43,18 @@
          };
          addButton.Clicked += OnAddButtonClicked;
 
+         // Role Manager 
+         var RoleButton = new Button
+         {
+            Text = "Request as Role Manager",
+            BackgroundColor = Color.FromHex("#4CAF50"),
+            TextColor = Colors.White,
+            CornerRadius = 8,
+            Margin = new Thickness(10)
+         };
+         RoleButton.Clicked += OnRoleButtonClicked;
+
+
          // List view for whitelisted numbers
          _whitelistView = new ListView
          {
@@ -72,10 +84,19 @@
                 warningLabel,
                 _newNumberEntry,
                 addButton,
+                RoleButton,
                 new Label { Text = "Whitelisted Numbers (Exceptions)", Margin = new Thickness(15, 10, 15, 0), FontAttributes = FontAttributes.Bold },
                 _whitelistView
             }
          };
+      }
+
+
+      
+      private async void OnRoleButtonClicked(object sender, System.EventArgs e)
+      {
+         _service.RequestCallScreeningRole(); 
+         await DisplayAlert("Success", $"Request Role Manager Completed", "OK");
       }
 
       private async void OnAddButtonClicked(object sender, System.EventArgs e)
