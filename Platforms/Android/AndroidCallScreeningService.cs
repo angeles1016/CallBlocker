@@ -74,14 +74,21 @@ public class AndroidCallScreeningService : CallScreeningService
          }
          else
          {
-            // Call is NOT whitelisted, reject it
-            var response = new CallResponse.Builder()
-                .SetRejectCall(true)            // REJECT the call
-                .SetSkipCallLog(false)          // Optionally hide from logs (or leave false)
-                .SetSkipNotification(true)      // Optionally silence the notification
-                .Build();
-            RespondToCall(callDetails, response);
-            System.Diagnostics.Debug.WriteLine($"[CallBlocker] Blocking non-whitelisted call from: {incomingNumber}");
+         // Call is NOT whitelisted, reject it
+         // Call is NOT whitelisted, reject it
+         // Call is NOT whitelisted, reject it
+         var response = new CallResponse.Builder(); 
+
+         response.SetSkipCallLog(true);           // HIDE from logs to prevent "missed call" notif
+         response.SetSkipNotification(true);      // Silence the notification
+         response.SetRejectCall(true);            // REJECT the call
+         response.SetDisallowCall(true);      // DISALLOW the call
+
+         var thisResponse =response.Build();     
+         RespondToCall(callDetails, thisResponse);
+         // ...
+         // ...
+         System.Diagnostics.Debug.WriteLine($"[CallBlocker] Blocking non-whitelisted call from: {incomingNumber}");
 
             // Show a transient message to the user that a call was blocked (for testing/confirmation)
             // Note: Toast/Notification visibility might be limited by the OS when running in the background.
