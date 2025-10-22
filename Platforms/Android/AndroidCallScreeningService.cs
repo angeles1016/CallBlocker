@@ -29,11 +29,14 @@ using Android.Widget; // You'll likely need this for Toast
 using Android.Telecom; // You need this for the CallScreeningService
 #endif
 
- 
+using System.IO;
+using Microsoft.Maui.Storage; // Make sure this is included at the top of your file
 
 
-   // 7a. The Android CallScreeningService implementation
-   [Service(Exported = true, Permission = "android.permission.BIND_SCREENING_SERVICE",
+
+
+// 7a. The Android CallScreeningService implementation
+[Service(Exported = true, Permission = "android.permission.BIND_SCREENING_SERVICE",
             Name = "com.companyname.AndroidCallScreeningService")]
 [IntentFilter(new[] { "android.telecom.CallScreeningService" })]
 public class AndroidCallScreeningService : CallScreeningService
@@ -90,15 +93,53 @@ public class AndroidCallScreeningService : CallScreeningService
          // ...
          System.Diagnostics.Debug.WriteLine($"[CallBlocker] Blocking non-whitelisted call from: {incomingNumber}");
 
-            // Show a transient message to the user that a call was blocked (for testing/confirmation)
-            // Note: Toast/Notification visibility might be limited by the OS when running in the background.
-            Handler mainHandler = new Handler(Looper.MainLooper);
+         // ----------------------------------------------------
+         // >> CALL THE NEW LOGGING METHOD HERE <<
+         LogBlockedCall(incomingNumber);
+         // ----------------------------------------------------
+
+
+         // Show a transient message to the user that a call was blocked (for testing/confirmation)
+         // Note: Toast/Notification visibility might be limited by the OS when running in the background.
+         Handler mainHandler = new Handler(Looper.MainLooper);
             mainHandler.Post(() =>
             {
                Toast.MakeText(this, $"Blocked call from {incomingNumber}", ToastLength.Short).Show();
             });
          }
+      } 
+
+
+// Inside your AndroidCallScreeningService class:
+
+      private void LogBlockedCall(string phoneNumber)
+      {
+         try
+         {
+            // 1. Define the file path in the app's private data folder.
+            // This is accessible only by your app and doesn't require extra permissions.
+            string fileName = "BlockedCallLog.txt";
+            string filePath = Path.Combine(FileSystem.AppDataDirectory, fileName);
+
+            // 2. Create the log entry with a timestamp.
+            string timestamp = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
+            string logEntry = $"[{timestamp}] BLOCKED: {phoneNumber}\n";
+
+            // 3. Append the entry to the file.
+            // If the file doesn't exist, it will be created automatically.
+            File.AppendAllText(filePath, logEntry);
+
+            // For debugging purposes, you can also write to the console/logcat
+            System.Diagnostics.Debug.WriteLine($"[CallBlocker Logger] Logged to file: {logEntry.Trim()} at {filePath}");
+         }
+         catch (Exception ex)
+         {
+            System.Diagnostics.Debug.WriteLine($"[CallBlocker Logger] Failed to write log: {ex.Message}");
+         }
       }
+
+
+
    }
 
    
