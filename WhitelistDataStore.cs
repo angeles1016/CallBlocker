@@ -19,7 +19,26 @@ namespace MainPage
         "408-838-6160", // bro
         "916-947-4683", // ethan
         "209-875-2885", // shane
-        "210-966-2250" // mom
+        "210-966-2250", // mom
+
+        "979-764-5575", // A&M Middle School Front Desk
+        "979-764-4264", // A&M Middle School Nurse
+        "979-764-4207", // A&M Middle School Registrar
+        "979-764-4279", // A&M Middle School Library
+        "979-764-4211", // A&M Middle School Counselor
+
+        "979-764-5400", // CSISD
+        "979-764-5530", // CSISD
+
+        "210-488-4754", // Alex Garner
+        "210-863-2912", // Greer Beacker
+
+        "979-458-5437", // Becky Gates Children’s Center
+        "979-458-6836" // Charlotte Sharp Children’s Center
+
+
+
+
     };
 
       public static void AddNumber(string number)
