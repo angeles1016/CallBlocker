@@ -10,6 +10,7 @@
       {
          Title = "Secure Call Whitelist";
          _service = callBlockerService;
+         BackgroundColor = Colors.White;
 
          // Ensure the native service is initialized when the UI loads
          _service.InitializeService();
@@ -36,7 +37,7 @@
          var addButton = new Button
          {
             Text = "Add to Whitelist",
-            BackgroundColor = Color.FromHex("#4CAF50"),
+            BackgroundColor = Color.FromArgb("#4CAF50"),
             TextColor = Colors.White,
             CornerRadius = 8,
             Margin = new Thickness(10)
@@ -47,7 +48,7 @@
          var RoleButton = new Button
          {
             Text = "Request as Role Manager",
-            BackgroundColor = Color.FromHex("#4CAF50"),
+            BackgroundColor = Color.FromArgb("#4CAF50"),
             TextColor = Colors.White,
             CornerRadius = 8,
             Margin = new Thickness(10)

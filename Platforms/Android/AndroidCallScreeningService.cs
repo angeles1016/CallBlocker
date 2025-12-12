@@ -49,63 +49,74 @@ public class AndroidCallScreeningService : CallScreeningService
 
          if (string.IsNullOrWhiteSpace(incomingNumber))
          {
-            // Number is private/unknown, usually blocked by default unless whitelisted.
-            // For safety, let the call through if we can't read the number.
-            RespondToCall(callDetails, new CallResponse.Builder().Build());
-            return;
+         // Number is private/unknown, usually blocked by default unless whitelisted.
+         // For safety, let the call through if we can't read the number.
+         //RespondToCall(callDetails, new CallResponse.Builder().Build());
+         //return;
+
+            // Treat unknown/hidden numbers as NOT whitelisted → block them
+            var response = new CallResponse.Builder()
+              .SetSkipCallLog(true)
+              .SetSkipNotification(true)
+              .SetRejectCall(true)
+              .SetDisallowCall(true)
+              .Build();
+
+            RespondToCall(callDetails, response);
+            LogBlockedCall("<UNKNOWN OR HIDDEN>");
+            
+
+         return;
          }
 
-         if (string.IsNullOrWhiteSpace(incomingNumber))
-         {
-            // Number is private/unknown, usually blocked by default unless whitelisted.
-            // For safety, let the call through if we can't read the number.
-            RespondToCall(callDetails, new CallResponse.Builder().Build());
-            return;
-         }
 
          // 2. Perform the whitelist check using the shared logic
          bool isWhitelisted = MainPage.WhitelistDataStore.IsNumberWhitelisted(incomingNumber);
 
          if (isWhitelisted)
          {
+            
+
             // Call is whitelisted, allow it to proceed
             // SetAllow(true) is not needed; simply building a default CallResponse is sufficient.
             var response = new CallResponse.Builder()
                 .Build();
             RespondToCall(callDetails, response);
+            LogAllowedCall(incomingNumber, "whitelisted");
+
             System.Diagnostics.Debug.WriteLine($"[CallBlocker] Allowing whitelisted call from: {incomingNumber}");
          }
          else
          {
-         // Call is NOT whitelisted, reject it
-         // Call is NOT whitelisted, reject it
-         // Call is NOT whitelisted, reject it
-         var response = new CallResponse.Builder(); 
+               // Call is NOT whitelisted, reject it
+               // Call is NOT whitelisted, reject it
+               // Call is NOT whitelisted, reject it
+               var response = new CallResponse.Builder(); 
 
-         response.SetSkipCallLog(true);           // HIDE from logs to prevent "missed call" notif
-         response.SetSkipNotification(true);      // Silence the notification
-         response.SetRejectCall(true);            // REJECT the call
-         response.SetDisallowCall(true);      // DISALLOW the call
+               response.SetSkipCallLog(true);           // HIDE from logs to prevent "missed call" notif
+               response.SetSkipNotification(true);      // Silence the notification
+               response.SetRejectCall(true);            // REJECT the call
+               response.SetDisallowCall(true);      // DISALLOW the call
 
-         var thisResponse =response.Build();     
-         RespondToCall(callDetails, thisResponse);
-         // ...
-         // ...
-         System.Diagnostics.Debug.WriteLine($"[CallBlocker] Blocking non-whitelisted call from: {incomingNumber}");
+               var thisResponse =response.Build();     
+               RespondToCall(callDetails, thisResponse);
+               // ...
+               // ...
+               System.Diagnostics.Debug.WriteLine($"[CallBlocker] Blocking non-whitelisted call from: {incomingNumber}");
 
-         // ----------------------------------------------------
-         // >> CALL THE NEW LOGGING METHOD HERE <<
-         LogBlockedCall(incomingNumber);
-         // ----------------------------------------------------
+               // ----------------------------------------------------
+               // >> CALL THE NEW LOGGING METHOD HERE <<
+               LogBlockedCall(incomingNumber);
+               // ----------------------------------------------------
 
 
-         // Show a transient message to the user that a call was blocked (for testing/confirmation)
-         // Note: Toast/Notification visibility might be limited by the OS when running in the background.
-         Handler mainHandler = new Handler(Looper.MainLooper);
-            mainHandler.Post(() =>
-            {
-               Toast.MakeText(this, $"Blocked call from {incomingNumber}", ToastLength.Short).Show();
-            });
+               // Show a transient message to the user that a call was blocked (for testing/confirmation)
+               // Note: Toast/Notification visibility might be limited by the OS when running in the background.
+               Handler mainHandler = new Handler(Looper.MainLooper);
+                  mainHandler.Post(() =>
+                  {
+                     Toast.MakeText(this, $"Blocked call from {incomingNumber}", ToastLength.Long).Show();
+                  });
          }
       } 
 
@@ -139,11 +150,30 @@ public class AndroidCallScreeningService : CallScreeningService
       }
 
 
+      private void LogAllowedCall(string phoneNumber, string reason)
+      {
+         try
+         {
+            string fileName = "AllowedCallLog.txt";
+            string filePath = Path.Combine(FileSystem.AppDataDirectory, fileName);
+            string timestamp = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
+            string logEntry = $"[{timestamp}] ALLOWED ({reason}): {phoneNumber}\n";
+            File.AppendAllText(filePath, logEntry);
+            System.Diagnostics.Debug.WriteLine($"[CallBlocker Logger] Logged ALLOW: {logEntry.Trim()}");
+         }
+         catch (Exception ex)
+         {
+            System.Diagnostics.Debug.WriteLine($"[CallBlocker Logger] Failed to write allow log: {ex.Message}");
+         }
+      }
 
-   }
 
-   
 
- 
+
+}
+
+
+
+
 
 #endif
