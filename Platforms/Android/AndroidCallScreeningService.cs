@@ -41,89 +41,153 @@ using Microsoft.Maui.Storage; // Make sure this is included at the top of your f
 [IntentFilter(new[] { "android.telecom.CallScreeningService" })]
 public class AndroidCallScreeningService : CallScreeningService
    {
-      public override void OnScreenCall([GeneratedEnum] Call.Details callDetails)
-      {
-         // 1. Check if the incoming number is valid
-         var handle = callDetails.GetHandle();
-         var incomingNumber = handle != null ? handle.SchemeSpecificPart : null;
+   public override void OnScreenCall([GeneratedEnum] Call.Details callDetails)
+   {
+      long startMs = SystemClock.ElapsedRealtime();
 
+      // Build a tag we can use to correlate lines for the same call
+      var handle = callDetails.GetHandle();
+      var incomingNumber = handle != null ? handle.SchemeSpecificPart : null;
+      string callTag = $"{incomingNumber ?? "UNKNOWN"}@{startMs}";
+
+      void T(string msg)
+      {
+         var elapsed = SystemClock.ElapsedRealtime() - startMs;
+         LoggerCall($"[CallBlocker Timing {callTag}] +{elapsed}ms {msg}");
+         System.Diagnostics.Debug.WriteLine($"[CallBlocker Timing {callTag}] +{elapsed}ms {msg}");
+      }
+
+      try
+      {
+         T("OnScreenCall invoked");
+
+         // 1) If number is unknown/hidden
          if (string.IsNullOrWhiteSpace(incomingNumber))
          {
-         // Number is private/unknown, usually blocked by default unless whitelisted.
-         // For safety, let the call through if we can't read the number.
-         //RespondToCall(callDetails, new CallResponse.Builder().Build());
-         //return;
+            T("Incoming number is null/empty (unknown/hidden) -> BLOCK");
 
-            // Treat unknown/hidden numbers as NOT whitelisted → block them
             var response = new CallResponse.Builder()
-              .SetSkipCallLog(true)
-              .SetSkipNotification(true)
-              .SetRejectCall(true)
-              .SetDisallowCall(true)
-              .Build();
+                .SetSkipCallLog(true)
+                .SetSkipNotification(true)
+                .SetRejectCall(true)
+                .SetDisallowCall(true)
+                .Build();
 
+            long beforeRespond = SystemClock.ElapsedRealtime() - startMs;
+            if (beforeRespond > 4500) T($"WARNING: RespondToCall about to run late ({beforeRespond}ms)");
+
+            T("Calling RespondToCall (BLOCK unknown/hidden)");
             RespondToCall(callDetails, response);
-            LogBlockedCall("<UNKNOWN OR HIDDEN>");
-            
+            T("RespondToCall returned (BLOCK unknown/hidden)");
 
-         return;
+            // Do slower work AFTER responding
+            LogBlockedCall("<UNKNOWN OR HIDDEN>");
+            return;
          }
 
-
-         // 2. Perform the whitelist check using the shared logic
+         // 2) Time the whitelist check
+         long wlStart = SystemClock.ElapsedRealtime();
          bool isWhitelisted = MainPage.WhitelistDataStore.IsNumberWhitelisted(incomingNumber);
+         long wlMs = SystemClock.ElapsedRealtime() - wlStart;
+
+         T($"Whitelist check done: isWhitelisted={isWhitelisted}, wlMs={wlMs}");
 
          if (isWhitelisted)
          {
-            
+            // Allow whitelisted calls
+            var response = new CallResponse.Builder().Build();
 
-            // Call is whitelisted, allow it to proceed
-            // SetAllow(true) is not needed; simply building a default CallResponse is sufficient.
-            var response = new CallResponse.Builder()
-                .Build();
+            long beforeRespond = SystemClock.ElapsedRealtime() - startMs;
+            if (beforeRespond > 4500) T($"WARNING: RespondToCall about to run late ({beforeRespond}ms)");
+
+            T("Calling RespondToCall (ALLOW whitelisted)");
             RespondToCall(callDetails, response);
-            LogAllowedCall(incomingNumber, "whitelisted");
+            T("RespondToCall returned (ALLOW whitelisted)");
 
+            // Do slower work AFTER responding
+            LogAllowedCall(incomingNumber, "whitelisted");
             System.Diagnostics.Debug.WriteLine($"[CallBlocker] Allowing whitelisted call from: {incomingNumber}");
          }
          else
          {
-               // Call is NOT whitelisted, reject it
-               // Call is NOT whitelisted, reject it
-               // Call is NOT whitelisted, reject it
-               var response = new CallResponse.Builder(); 
+            // Block non-whitelisted calls
+            var builder = new CallResponse.Builder();
+            builder.SetSkipCallLog(true);
+            builder.SetSkipNotification(true);
+            builder.SetRejectCall(true);
+            builder.SetDisallowCall(true);
 
-               response.SetSkipCallLog(true);           // HIDE from logs to prevent "missed call" notif
-               response.SetSkipNotification(true);      // Silence the notification
-               response.SetRejectCall(true);            // REJECT the call
-               response.SetDisallowCall(true);      // DISALLOW the call
+            var response = builder.Build();
 
-               var thisResponse =response.Build();     
-               RespondToCall(callDetails, thisResponse);
-               // ...
-               // ...
-               System.Diagnostics.Debug.WriteLine($"[CallBlocker] Blocking non-whitelisted call from: {incomingNumber}");
+            long beforeRespond = SystemClock.ElapsedRealtime() - startMs;
+            if (beforeRespond > 4500) T($"WARNING: RespondToCall about to run late ({beforeRespond}ms)");
 
-               // ----------------------------------------------------
-               // >> CALL THE NEW LOGGING METHOD HERE <<
-               LogBlockedCall(incomingNumber);
-               // ----------------------------------------------------
+            T("Calling RespondToCall (BLOCK non-whitelisted)");
+            RespondToCall(callDetails, response);
+            T("RespondToCall returned (BLOCK non-whitelisted)");
 
+            // Do slower work AFTER responding
+            System.Diagnostics.Debug.WriteLine($"[CallBlocker] Blocking non-whitelisted call from: {incomingNumber}");
+            LogBlockedCall(incomingNumber);
 
-               // Show a transient message to the user that a call was blocked (for testing/confirmation)
-               // Note: Toast/Notification visibility might be limited by the OS when running in the background.
-               Handler mainHandler = new Handler(Looper.MainLooper);
-                  mainHandler.Post(() =>
-                  {
-                     Toast.MakeText(this, $"Blocked call from {incomingNumber}", ToastLength.Long).Show();
-                  });
+            // Toast AFTER responding (still may be slow / not always visible in background)
+            Handler mainHandler = new Handler(Looper.MainLooper);
+            mainHandler.Post(() =>
+            {
+               Toast.MakeText(this, $"Blocked call from {incomingNumber}", ToastLength.Long).Show();
+            });
          }
-      } 
+      }
+      catch (Exception ex)
+      {
+         // IMPORTANT: never crash the screening path
+         T($"ERROR: Exception in OnScreenCall: {ex.Message}");
+
+         // Safe fallback: allow call if something went wrong
+         var response = new CallResponse.Builder().Build();
+
+         long beforeRespond = SystemClock.ElapsedRealtime() - startMs;
+         if (beforeRespond > 4500) T($"WARNING: fallback RespondToCall about to run late ({beforeRespond}ms)");
+
+         T("Calling RespondToCall (FALLBACK ALLOW)");
+         RespondToCall(callDetails, response);
+         T("RespondToCall returned (FALLBACK ALLOW)");
+      }
+   }
 
 
-// Inside your AndroidCallScreeningService class:
 
-      private void LogBlockedCall(string phoneNumber)
+   // Inside your AndroidCallScreeningService class:
+   private void LoggerCall(string msg)
+   {
+      try
+      {
+         // 1. Define the file path in the app's private data folder.
+         // This is accessible only by your app and doesn't require extra permissions.
+         string fileName = "BlockedCallLog.txt";
+         string filePath = Path.Combine(FileSystem.AppDataDirectory, fileName);
+
+         // 2. Create the log entry with a timestamp.
+         string timestamp = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
+         string logEntry = $"[{timestamp}]:  {msg}\n";
+
+         // 3. Append the entry to the file.
+         // If the file doesn't exist, it will be created automatically.
+         File.AppendAllText(filePath, logEntry);
+
+         // For debugging purposes, you can also write to the console/logcat
+         System.Diagnostics.Debug.WriteLine($"[CallBlocker Logger] Logged to file: {logEntry.Trim()} at {filePath}");
+      }
+      catch (Exception ex)
+      {
+         System.Diagnostics.Debug.WriteLine($"[CallBlocker Logger] Failed to write log: {ex.Message}");
+      }
+   }
+
+
+
+
+   private void LogBlockedCall(string phoneNumber)
       {
          try
          {

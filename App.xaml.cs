@@ -26,6 +26,8 @@ namespace MainPage
       // to prevent the "Both MainPage was set and CreateWindow was overridden" error.
       protected override Window CreateWindow(IActivationState activationState)
       {
+         WhitelistDataStore.Initialize();   // <-- add this line first
+
          // Use the injected service to create the NavigationPage with the main content
          var mainPage = new MainPage(_callBlockerService);
 
