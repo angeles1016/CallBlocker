@@ -14,19 +14,21 @@ namespace MainPage
       // Parameterless constructor is usually needed by the framework
       public App()
       {
+         WhitelistDataStore.Initialize();   // <-- add this line first
       }
 
       // Dependency injected constructor (used by the framework when resolving App)
       public App(ICallBlockerService callBlockerService)
       {
          _callBlockerService = callBlockerService;
+         WhitelistDataStore.Initialize();   // <-- add this line first
       }
 
       // Override CreateWindow to ensure dependency injection happens correctly and 
       // to prevent the "Both MainPage was set and CreateWindow was overridden" error.
       protected override Window CreateWindow(IActivationState activationState)
       {
-         WhitelistDataStore.Initialize();   // <-- add this line first
+        
 
          // Use the injected service to create the NavigationPage with the main content
          var mainPage = new MainPage(_callBlockerService);
