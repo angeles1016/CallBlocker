@@ -66,8 +66,8 @@ public class AndroidCallScreeningService : CallScreeningService
            .SetDisallowCall(true)
            .Build();
 
-         long beforeRespond = SystemClock.ElapsedRealtime() - startMs;
-         if (beforeRespond > 4500) Loggers($"WARNING: RespondToCall about to run late ({beforeRespond}ms)");
+         long br = SystemClock.ElapsedRealtime() - startMs;
+         if (br > 4500) Loggers($"WARNING: RespondToCall about to run late ({br}ms)");
          RespondToCall(callDetails, response);
          LogBlockedCall("<UNKNOWN OR HIDDEN>");
 
@@ -75,10 +75,11 @@ public class AndroidCallScreeningService : CallScreeningService
          return;
       }
 
-
+      long beforeRespond = SystemClock.ElapsedRealtime() - startMs;
+      if (beforeRespond > 5000) Loggers($"!!!Time Exceeds!!!: RespondToCall about to exceeds 5 seconds:  ({beforeRespond}ms)");
       // 2. Perform the whitelist check using the shared logic
       bool isWhitelisted = WhitelistDataStore.IsThisNumberWhitelisted(incomingNumber);//MainPage.WhitelistDataStore.IsNumberWhitelisted(incomingNumber);
-
+      Loggers($"incomingNumber: {incomingNumber}, isWhitelisted: {isWhitelisted}, beforeRespond: {beforeRespond}");
       if (isWhitelisted)
       {
 
@@ -87,8 +88,10 @@ public class AndroidCallScreeningService : CallScreeningService
          // SetAllow(true) is not needed; simply building a default CallResponse is sufficient.
          var response = new CallResponse.Builder()
              .Build();
-         RespondToCall(callDetails, response);
+         beforeRespond = SystemClock.ElapsedRealtime() - startMs;
+         if (beforeRespond > 5000) Loggers($"!!!Time Exceeds!!!: RespondToCall about to exceeds 5 seconds:  ({beforeRespond}ms)");
          LogAllowedCall(incomingNumber, "whitelisted");
+         RespondToCall(callDetails, response); 
 
          System.Diagnostics.Debug.WriteLine($"[CallBlocker] Allowing whitelisted call from: {incomingNumber}");
       }
@@ -106,7 +109,7 @@ public class AndroidCallScreeningService : CallScreeningService
 
          var thisResponse = response.Build();
 
-         long beforeRespond = SystemClock.ElapsedRealtime() - startMs;
+         beforeRespond = SystemClock.ElapsedRealtime() - startMs;
          if (beforeRespond > 5000) Loggers($"!!!Time Exceeds!!!: RespondToCall about to exceeds 5 seconds:  ({beforeRespond}ms)");
          RespondToCall(callDetails, thisResponse);
          // ...
