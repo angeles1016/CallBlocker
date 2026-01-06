@@ -10,30 +10,30 @@ namespace MainPage
    public static class WhitelistDataStore
    {
 
-      private static readonly HashSet<string> _whitelistSet = new HashSet<string>
+      public static readonly HashSet<string> _whitelistSet = new HashSet<string>
     {
-        "210-452-2031", // luvs
-        "210-774-1437", //baby girl
-        "979-344-8888", //baby boy
-        "408-838-6160", // bro
-        "916-947-4683", // ethan
-        "209-875-2885", // shane
-        "210-966-2250", // mom
+        "2104522031", // luvs
+        "2107741437", //baby girl
+        "9793448888", //baby boy
+        "4088386160", // bro
+        "9169474683", // ethan
+        "2098752885", // shane
+        "2109662250", // mom
 
-        "979-764-5575", // A&M Middle School Front Desk
-        "979-764-4264", // A&M Middle School Nurse
-        "979-764-4207", // A&M Middle School Registrar
-        "979-764-4279", // A&M Middle School Library
-        "979-764-4211", // A&M Middle School Counselor
+        "9797645575", // A&M Middle School Front Desk
+        "9797644264", // A&M Middle School Nurse
+        "9797644207", // A&M Middle School Registrar
+        "9797644279", // A&M Middle School Library
+        "9797644211", // A&M Middle School Counselor
 
-        "979-764-5400", // CSISD
-        "979-764-5530", // CSISD
+        "9797645400", // CSISD
+        "9797645530", // CSISD
 
-        "210-488-4754", // Alex Garner
-        "210-863-2912", // Greer Beacker
+        "2104884754", // Alex Garner
+        "2108632912", // Greer Beacker
 
-        "979-458-5437", // Becky Gates Children’s Center
-        "979-458-6836" // Charlotte Sharp Children’s Center
+        "9794585437", // Becky Gates Children’s Center
+        "9794586836" // Charlotte Sharp Children’s Center
     };
 
       public static void Initialize()

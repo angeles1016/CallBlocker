@@ -59,7 +59,7 @@
          // List view for whitelisted numbers
          _whitelistView = new ListView
          {
-            ItemsSource = WhitelistDataStore.Whitelist,
+            ItemsSource = WhitelistDataStore._whitelistSet,
             HasUnevenRows = true,
             ItemTemplate = new DataTemplate(() =>
             {
